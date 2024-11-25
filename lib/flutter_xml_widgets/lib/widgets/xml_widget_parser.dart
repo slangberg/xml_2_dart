@@ -59,41 +59,11 @@ class XmlWidgetParser {
 
   dynamic _evaluateDynamicProp(String value) {
     try {
-      // Handle inline expressions like {count > 10}
-      if (value.startsWith('{') && value.endsWith('}')) {
-        final evaluator = ExpressionEvaluator(context);
-        final innerExpression = value.substring(1, value.length - 1);
-        return evaluator.evaluate(innerExpression);
-      }
-
-      // Handle numeric strings
-      // final doubleValue = double.tryParse(value);
-      // if (doubleValue != null) {
-      //   return doubleValue; // Return as double if the value is numeric
-      // }
-
-      // Handle colors or other expressions
-      if (value.startsWith('Colors.')) {
-        return evaluateExpression(
-            value, {}); // Use existing evaluateExpression logic for colors
-      }
-
-      // Handle string interpolation (replace {key} with context values)
-      final regex = RegExp(r'\{(.*?)\}');
-      if (regex.hasMatch(value)) {
-        return value.replaceAllMapped(regex, (match) {
-          final key = match.group(1) ?? '';
-          if (context.containsKey(key)) {
-            return context[key].toString();
-          }
-          throw Exception('Key not found in context: $key');
-        });
-      }
-
-      // Default case: return the original string
-      return value;
+      // Delegate all parsing to evaluateExpression for consistency
+      return evaluateExpression(value, context);
     } catch (e) {
-      throw Exception('Error evaluating prop: $value. Error: $e');
+      throw Exception(
+          'Error evaluating prop: $value. Context: $context. Error: $e');
     }
   }
 }

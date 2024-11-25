@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-
 import 'color_parser.dart';
 import 'expression_parser.dart';
 
@@ -43,7 +42,31 @@ dynamic evaluateExpression(dynamic expression, Map<String, dynamic> context) {
     if (expression.startsWith('{') && expression.endsWith('}')) {
       final evaluator = ExpressionEvaluator(context);
       final innerExpression = expression.substring(1, expression.length - 1);
-      return evaluator.evaluate(innerExpression);
+
+      // Handle dot notation as a simple key resolution
+      if (innerExpression.contains('.') &&
+          !innerExpression.contains(RegExp(r'[<>=!&|]'))) {
+        return _resolveDotNotationKey(innerExpression, context);
+      }
+
+      // Evaluate using ExpressionEvaluator for complex expressions
+      final result = evaluator.evaluate(innerExpression);
+
+      // If the result is a color expression, parse it
+      if (result is String &&
+          (result.startsWith('Colors.') || result.startsWith('Color.from'))) {
+        return ColorParser.parseColor(result);
+      }
+      return result;
+    }
+
+    // Handle string interpolation (e.g., "Welcome, {user.name}!")
+    final regex = RegExp(r'\{(.*?)\}');
+    if (regex.hasMatch(expression)) {
+      return expression.replaceAllMapped(regex, (match) {
+        final key = match.group(1) ?? '';
+        return _resolveDotNotationKey(key, context).toString();
+      });
     }
 
     // Handle hex color codes like #RRGGBB or #AARRGGBB
@@ -57,13 +80,6 @@ dynamic evaluateExpression(dynamic expression, Map<String, dynamic> context) {
       return ColorParser.parseColor(expression);
     }
 
-    // Handle JSON for complex props
-    // if (expression.startsWith('{{') &&
-    //     expression.endsWith('}}') &&
-    //     isJson(expression)) {
-    //   return json.decode(expression);
-    // }
-
     // Handle dot notation for nested context keys
     if (expression.contains('.')) {
       return _resolveDotNotationKey(expression, context);
@@ -72,7 +88,8 @@ dynamic evaluateExpression(dynamic expression, Map<String, dynamic> context) {
     // Default case: Return as a context key or string
     return context[expression] ?? expression;
   } catch (e) {
-    throw Exception('Error evaluating expression: $expression. Error: $e');
+    throw Exception(
+        'Error evaluating expression: $expression. Context: $context. Error: $e');
   }
 }
 
@@ -90,10 +107,10 @@ dynamic _resolveDotNotationKey(String key, Map<String, dynamic> context) {
         if (index != null && index >= 0 && index < value.length) {
           value = value[index];
         } else {
-          throw Exception('Invalid list index: $part');
+          throw Exception('Invalid list index: $part in $value');
         }
       } else {
-        throw Exception('Invalid key access: $part');
+        throw Exception('Invalid key access: $part of $key in $context');
       }
     }
 
@@ -106,7 +123,8 @@ dynamic _resolveDotNotationKey(String key, Map<String, dynamic> context) {
 /// Converts a hex color string to a [Color].
 Color _getColorFromHex(String hexColor) {
   final buffer = StringBuffer();
-  if (hexColor.length == 7) buffer.write('ff');
+  if (hexColor.length == 7)
+    buffer.write('ff'); // Add alpha channel if not provided
   buffer.write(hexColor.replaceFirst('#', ''));
   return Color(int.parse(buffer.toString(), radix: 16));
 }

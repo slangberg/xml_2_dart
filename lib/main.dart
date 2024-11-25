@@ -5,9 +5,9 @@ void main() {
   registerDefaultWidgets();
 
   const xml = '''
-<Container padding="16.0" color="Colors.blue">
+<Container padding="40" color="Colors.blue">
   <If condition="{isLoggedIn}">
-    <Text value="{userName}" fontSize="{60}" color="Colors.white" />
+    <Text value="Welcome {user.name}" fontSize="{60}" color="Colors.white" />
   </If>
 </Container>
   ''';
@@ -15,6 +15,7 @@ void main() {
   final parser = XmlWidgetParser(context: {
     'isLoggedIn': true,
     'userName': 'John Doe',
+    'user': {'name': 'John Doe'},
   });
 
   runApp(
