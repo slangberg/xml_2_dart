@@ -7,7 +7,7 @@ void main() {
   const xml = '''
 <Container padding="16.0" color="Colors.blue">
   <If condition="{isLoggedIn}">
-    <Text value="{userName}" fontSize="{60}" color="{Colors.white}" />
+    <Text value="{userName}" fontSize="{60}" color="Colors.white" />
   </If>
 </Container>
   ''';
