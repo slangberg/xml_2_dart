@@ -66,16 +66,6 @@ class AttributeEvaluator extends ExpressionEvaluator {
       if (expression.callee is MemberExpression) {
         // Resolve the MemberExpression
         final memberExpression = expression.callee as MemberExpression;
-        final resolvedObject = eval(memberExpression.object, context);
-
-        print({
-          'target': target,
-          'expression': expression,
-          'callee': expression.callee,
-          'memberExpression': memberExpression,
-          'object': memberExpression.object,
-          'resolvedObject': resolvedObject
-        });
 
         String objectName;
         if (expression.callee is Identifier) {
