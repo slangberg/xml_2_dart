@@ -37,6 +37,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   petitparser: ^6.0.2
   xml: ^6.5.0
+  expressions: ^0.2.5+2
 
 dev_dependencies:
   flutter_test:

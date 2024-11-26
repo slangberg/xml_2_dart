@@ -4,7 +4,35 @@ class ExpressionGrammarDefinition extends GrammarDefinition {
   @override
   Parser start() => ref0(expression).end();
 
-  Parser expression() => ref0(orExpression);
+  Parser expression() => ref0(ternaryExpression);
+
+  /// Parses ternary expressions of the form `condition ? trueValue : falseValue`.
+  Parser ternaryExpression() => (ref0(orExpression) &
+              (string('?').trim() &
+                      ref0(expression) &
+                      string(':').trim() &
+                      ref0(expression))
+                  .optional())
+          .map((values) {
+        if (values[1] == null) {
+          // No ternary operator, return the base condition
+          return values[0];
+        } else {
+          // Ternary operator present, parse condition, trueValue, and falseValue
+          final condition = values[0];
+          final trueValue =
+              values[1][1]; // Extract trueValue from the second part
+          final falseValue =
+              values[1][3]; // Extract falseValue from the second part
+
+          return {
+            'type': 'ternary',
+            'condition': condition,
+            'trueValue': trueValue,
+            'falseValue': falseValue,
+          };
+        }
+      });
 
   Parser orExpression() => ref0(andExpression)
           .separatedBy(string('||').trim(), includeSeparators: false)
@@ -101,7 +129,11 @@ class ExpressionGrammarDefinition extends GrammarDefinition {
         return result;
       });
 
-  Parser factor() => ref0(value) | ref0(parentheses);
+  Parser factor() => ref0(dotNotation) | ref0(value) | ref0(parentheses);
+
+  /// Parses dot notation keys like `user.name`
+  Parser dotNotation() =>
+      ref0(identifier).separatedBy(char('.')).flatten().trim();
 
   Parser value() => (ref0(number) | ref0(boolean) | ref0(identifier));
 

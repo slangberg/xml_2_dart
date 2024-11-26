@@ -8,14 +8,14 @@ void registerDefaultWidgets() {
       return Text(
         props['value'] ?? '',
         style: TextStyle(
-          fontSize: props['fontSize'],
+          fontSize: props['fontSize'].toDouble(),
           color: props['color'],
         ),
       );
     },
-    {
-      // 'fontSize': (value) => double.parse(value),
-    },
+    // {
+    //   'fontSize': (value) => double.parse(value),
+    // },
   );
 
   WidgetRegistry.register(
