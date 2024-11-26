@@ -6,5 +6,4 @@ export 'lib/widgets/widget_registry.dart';
 export 'lib/widgets/default_widgets.dart';
 
 // // Export utilities
-export 'lib/utils/expression_evaluator.dart';
 export 'lib/utils/exceptions.dart';

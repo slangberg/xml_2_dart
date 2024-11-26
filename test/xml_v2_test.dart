@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:xml_to_dart/flutter_xml_widgets/v2/color_resolver.dart';
-import 'package:xml_to_dart/flutter_xml_widgets/v2/xml_v2.dart';
+import 'package:xml_to_dart/flutter_xml_widgets/lib/parsers/color_resolver.dart';
+import 'package:xml_to_dart/flutter_xml_widgets/lib/widgets/xml_widget_parser.dart';
 
 void main() {
   group('XmlWidgetParser Tests', () {
@@ -60,6 +60,12 @@ void main() {
       const xmlString = '<Text fontSize="{60}" />';
       final result = parser.parseXml(xmlString, debug: true);
       expect(result['attributes']['fontSize'], 60);
+    });
+
+    test('Handles Color.Value', () {
+      const xmlString = '<Container color="{Colors.white}" />';
+      final result = parser.parseXml(xmlString, debug: true);
+      expect(result['attributes']['color'], Colors.white);
     });
 
     test('Handles Color.fromRGBO', () {
