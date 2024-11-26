@@ -5,7 +5,7 @@ void main() {
   registerDefaultWidgets();
 
   const xml = '''
-<Container padding="40" color="Colors.blue">
+<Container padding="40" color="{isLoggedIn ? Colors.blue : Colors.red}">
   <If condition="{isLoggedIn}">
     <Text value="Welcome {user.name}" fontSize="{60}" color="Colors.white" />
   </If>

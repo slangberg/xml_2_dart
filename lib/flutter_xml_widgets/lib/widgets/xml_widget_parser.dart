@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:xml/xml.dart';
-import '../utils/dynamic_props.dart';
+import '../utils/expression_evaluator.dart';
 import '../utils/exceptions.dart';
 import 'widget_registry.dart';
 
@@ -59,8 +59,16 @@ class XmlWidgetParser {
 
   dynamic _evaluateDynamicProp(String value) {
     try {
-      // Delegate all parsing to evaluateExpression for consistency
-      return evaluateExpression(value, context);
+      // Check if the value starts and ends with curly braces
+      if (value.startsWith('{') && value.endsWith('}')) {
+        final innerExpression = value.substring(1, value.length - 1);
+
+        // Use ExpressionEvaluator for complex expressions
+        return evaluateExpression(innerExpression, context);
+      }
+
+      // Fallback for other cases
+      return value;
     } catch (e) {
       throw Exception(
           'Error evaluating prop: $value. Context: $context. Error: $e');
