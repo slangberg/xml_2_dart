@@ -9,13 +9,21 @@ void main() {
   <If condition="{isLoggedIn}">
     <Text value="Welcome {user.name}" fontSize="{60}" color="{Colors.white}" />
   </If>
+  <ForEach list="{items}">
+    <Text value="{item.name}" />
+  </ForEach>
 </Container>
   ''';
 
   final parser = XmlWidgetParser(context: {
-    'isLoggedIn': false,
+    'isLoggedIn': true,
     'userName': 'John Doe',
     'user': {'name': 'John Doe'},
+    'items': [
+      {'name': 'Item 1'},
+      {'name': 'Item 2'},
+      {'name': 'Item 3'},
+    ]
   });
 
   runApp(

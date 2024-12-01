@@ -40,17 +40,11 @@ class AttributeEvaluator extends ExpressionEvaluator {
         return object.resolve(expression.property.name);
       }
     } else if (object is Map<String, dynamic>) {
-      // Handle dot notation for nested context keys
-      if (object.containsKey(expression.property.name)) {
-        return object[expression.property.name];
-      }
-    } else if (object == null && objectName == 'Colors') {
+      return _resolveDotNotation(object, expression.property.name);
+    } else if (objectName == 'Colors') {
       // Handle null Colors object
       print("Handle null Colors object");
       return const ColorsResolver();
-    } else if (objectName == 'Colors') {
-      // Special handling for `Color` type
-      return ColorsResolver();
     }
 
     throw Exception(
@@ -100,6 +94,52 @@ class AttributeEvaluator extends ExpressionEvaluator {
     } catch (e) {
       throw Exception("evalCallExpression eval error: $e");
     }
+  }
+
+  dynamic _resolveDotNotation(dynamic object, String key) {
+    try {
+      final parts = key.split('.');
+      dynamic current = object;
+
+      for (final part in parts) {
+        if (current is Map<String, dynamic>) {
+          if (!current.containsKey(part)) {
+            throw Exception('Key not found: $part in $current');
+          }
+          current = current[part];
+        } else if (current is List) {
+          final index = int.tryParse(part);
+          if (index != null && index >= 0 && index < current.length) {
+            current = current[index];
+          } else {
+            throw Exception('Invalid list index: $part in $current');
+          }
+        } else if (current != null &&
+            current.toString().startsWith('Instance of')) {
+          // Resolve methods or properties on objects dynamically
+          final result = _resolveObjectProperty(current, part);
+          if (result == null) {
+            throw Exception('Property $part not found in object $current');
+          }
+          current = result;
+        } else {
+          throw Exception('Unsupported object type for key $part in $current');
+        }
+      }
+
+      return current;
+    } catch (e) {
+      throw Exception('Error resolving dot notation: $key. Error: $e');
+    }
+  }
+
+  /// Dynamically resolve properties or methods on objects
+  dynamic _resolveObjectProperty(dynamic object, String property) {
+    final typeMirror = object.runtimeType;
+    if (typeMirror.toString().contains(property)) {
+      return object;
+    }
+    return null;
   }
 
   /// Detect if the current `MemberExpression` is part of a method call.

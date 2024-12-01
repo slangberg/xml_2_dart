@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:xml/xml.dart';
 
-typedef WidgetBuilderFunction = Widget Function(Map<String, dynamic> props,
-    List<Widget> children, Map<String, dynamic> context);
+// typedef WidgetBuilderFunction = Widget Function(
+//     Map<String, dynamic> props,
+//     List<Widget> children,
+//     Map<String, dynamic> context,
+//     List<XmlElement> rawChildren);
+
+typedef WidgetBuilderFunction = Widget Function(
+    {required Map<String, dynamic> props,
+    required Map<String, dynamic> context,
+    required List<Widget> children,
+    required List<XmlElement> rawChildren});
+
+// typedef RawWidgetBuilderFunction = Widget Function(Map<String, dynamic> props,
+//     List<XmlElement> children, Map<String, dynamic> context);
 
 class WidgetRegistry {
   static final Map<String, _WidgetDefinition> _registry = {};

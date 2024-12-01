@@ -13,6 +13,9 @@ void main() {
       context = {
         'isLoggedIn': true,
         'user': {'name': 'John Doe'},
+        "nested": {
+          "value": {"key": "nested value"}
+        },
         'rawReturn': () => 12,
         'arg': (dynamic args) => args,
         'Colors': ColorsResolver(),
@@ -54,6 +57,24 @@ void main() {
       const xmlString = '<Text value="Welcome {user.name}!" />';
       final result = parser.parseXml(xmlString, debug: true);
       expect(result['attributes']['value'], 'Welcome John Doe!');
+    });
+
+    test('Resolves object single dot interpolation', () {
+      const xmlString = '<Text value="{user.name}" />';
+      final result = parser.parseXml(xmlString, debug: true);
+      expect(result['attributes']['value'], 'John Doe');
+    });
+
+    test('Resolves object nested dot interpolation', () {
+      const xmlString = '<Text value="{user.name}" />';
+      final result = parser.parseXml(xmlString, debug: true);
+      expect(result['attributes']['value'], 'John Doe');
+    });
+
+    test('Resolves string nested dot notation', () {
+      const xmlString = '<Text value="{nested.value.key}" />';
+      final result = parser.parseXml(xmlString, debug: true);
+      expect(result['attributes']['value'], "nested value");
     });
 
     test('Parses numeric attributes', () {
