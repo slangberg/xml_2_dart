@@ -29,11 +29,11 @@ class AttributeEvaluator extends ExpressionEvaluator {
 
     // Distinguish between property lookups and methods
     if (object is ColorsResolver) {
-      print('object is ColorsResolver');
+      // print('object is ColorsResolver');
       // Check if the property is being accessed as part of a method call
       if (_isPartOfMethodCall(expression)) {
         // Return the method resolver instead of property value
-        print('Returning method resolver');
+        // print('Returning method resolver');
         return object.resolveMethod(expression.property.name);
       } else {
         // Handle Colors.<color> like Colors.blue
@@ -43,7 +43,7 @@ class AttributeEvaluator extends ExpressionEvaluator {
       return _resolveDotNotation(object, expression.property.name);
     } else if (objectName == 'Colors') {
       // Handle null Colors object
-      print("Handle null Colors object");
+      // print("Handle null Colors object");
       return const ColorsResolver();
     }
 
@@ -82,8 +82,8 @@ class AttributeEvaluator extends ExpressionEvaluator {
       final args =
           expression.arguments.map((arg) => eval(arg, context)).toList();
 
-      print(
-          'Evaluating call expression: $expression, Target: $target, Args: $args');
+      // print(
+      //     'Evaluating call expression: $expression, Target: $target, Args: $args');
 
       // If the target is callable, invoke it
       if (target is Function) {

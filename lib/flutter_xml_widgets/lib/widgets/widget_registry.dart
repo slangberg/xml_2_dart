@@ -1,49 +1,78 @@
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
 
-// typedef WidgetBuilderFunction = Widget Function(
-//     Map<String, dynamic> props,
-//     List<Widget> children,
-//     Map<String, dynamic> context,
-//     List<XmlElement> rawChildren);
+typedef WidgetBuilderFunction = Widget Function({
+  required Map<String, dynamic> props,
+  required Map<String, dynamic> context,
+  required List<XmlElement> rawChildren,
+  required List<Widget> children,
+});
 
-typedef WidgetBuilderFunction = Widget Function(
-    {required Map<String, dynamic> props,
-    required Map<String, dynamic> context,
-    required List<Widget> children,
-    required List<XmlElement> rawChildren});
+class _WidgetDefinition {
+  final WidgetBuilderFunction builder;
+  final Map<String, PropConfig> propConfigs;
 
-// typedef RawWidgetBuilderFunction = Widget Function(Map<String, dynamic> props,
-//     List<XmlElement> children, Map<String, dynamic> context);
+  _WidgetDefinition(this.builder, this.propConfigs);
+}
+
+class PropConfig {
+  final PropTransformer? transformer;
+  final Type? type;
+  final Type? preTransformType;
+
+  PropConfig({this.transformer, this.type, this.preTransformType});
+}
+
+typedef PropTransformer = dynamic Function(dynamic value);
 
 class WidgetRegistry {
   static final Map<String, _WidgetDefinition> _registry = {};
 
-  /// Registers a widget with an optional map of property transformers
-  static void register(
-    String tag,
-    WidgetBuilderFunction builder, [
-    Map<String, PropTransformer>? propTransformers,
-  ]) {
-    _registry[tag] = _WidgetDefinition(builder, propTransformers ?? {});
+  static void register({
+    required String tag,
+    required WidgetBuilderFunction builder,
+    Map<String, PropConfig>? propConfigs,
+  }) {
+    _registry[tag] = _WidgetDefinition(builder, propConfigs ?? {});
   }
 
-  /// Retrieves the builder and applies transformations
   static WidgetBuilderFunction? getBuilder(String tag) {
     return _registry[tag]?.builder;
   }
 
-  /// Retrieves the prop transformers
   static Map<String, PropTransformer>? getTransformers(String tag) {
-    return _registry[tag]?.propTransformers;
+    final propConfigs = _registry[tag]?.propConfigs;
+    if (propConfigs == null) return null;
+
+    final transformers = <String, PropTransformer>{};
+    for (var entry in propConfigs.entries) {
+      if (entry.value.transformer != null) {
+        transformers[entry.key] = entry.value.transformer!;
+      }
+    }
+    return transformers;
+  }
+
+  static bool validateProps(
+      String tag, Map<String, dynamic> props, bool preCheck) {
+    for (var key in props.keys) {
+      final value = props[key];
+      validateSingleProp(tag, key, value, preCheck);
+    }
+    return true;
+  }
+
+  static bool validateSingleProp(
+      String tag, String key, dynamic value, bool preCheck) {
+    final propConfigs = _registry[tag]?.propConfigs;
+    if (propConfigs == null) return true;
+    final config = propConfigs[key];
+    final check = preCheck ? config?.preTransformType : config?.type;
+    if (config != null && value.runtimeType != check) {
+      throw Exception(
+          'Invalid $tag prop: $key ${preCheck ? '(Raw)' : '(Transformed)'} -  ${value.runtimeType} not ${check}');
+    }
+
+    return true;
   }
 }
-
-class _WidgetDefinition {
-  final WidgetBuilderFunction builder;
-  final Map<String, PropTransformer> propTransformers;
-
-  _WidgetDefinition(this.builder, this.propTransformers);
-}
-
-typedef PropTransformer = dynamic Function(dynamic value);

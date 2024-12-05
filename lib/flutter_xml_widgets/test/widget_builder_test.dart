@@ -13,8 +13,8 @@ void main() {
 
     test('register and retrieve a widget without transformers', () {
       WidgetRegistry.register(
-        'TestWidget',
-        ({
+        tag: 'TestWidget',
+        builder: ({
           required Map<String, dynamic> props,
           required Map<String, dynamic> context,
           required List<Widget> children,
@@ -40,8 +40,8 @@ void main() {
 
     test('register and retrieve a widget with transformers', () {
       WidgetRegistry.register(
-        'TestWidget',
-        ({
+        tag: 'TestWidget',
+        builder: ({
           required Map<String, dynamic> props,
           required Map<String, dynamic> context,
           required List<Widget> children,
@@ -52,9 +52,13 @@ void main() {
             color: props['color'],
           );
         },
-        {
-          'padding': (value) => EdgeInsets.all(double.parse(value)),
-          'color': (value) => Color(int.parse(value)),
+        propConfigs: {
+          'padding': PropConfig(
+            transformer: (value) => EdgeInsets.all(double.parse(value)),
+          ),
+          'color': PropConfig(
+            transformer: (value) => Color(int.parse(value)),
+          ),
         },
       );
 
@@ -145,7 +149,7 @@ void main() {
     expect(builder, isNotNull);
 
     final rawXml =
-        '<p><Container padding="0"><Text fontSize="20" value="{item}" /></Container></p>';
+        '<p><Container padding="0.00"><Text fontSize="{20}" value="{item}" /></Container></p>';
     final rawChildren = XmlDocument.parse(rawXml)
         .rootElement
         .children

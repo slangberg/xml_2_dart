@@ -12,8 +12,8 @@ typedef PropS = dynamic Function({
 
 void registerDefaultWidgets() {
   WidgetRegistry.register(
-    'Text',
-    ({
+    tag: 'Text',
+    builder: ({
       required Map<String, dynamic> props,
       required List<Widget> children,
       required Map<String, dynamic> context,
@@ -27,14 +27,17 @@ void registerDefaultWidgets() {
         ),
       );
     },
-    {
-      'fontSize': (value) => double.parse(value),
+    propConfigs: {
+      'fontSize': PropConfig(
+          transformer: (value) => double.parse(value),
+          preTransformType: String,
+          type: double),
     },
   );
 
   WidgetRegistry.register(
-    'Container',
-    ({
+    tag: 'Container',
+    builder: ({
       required Map<String, dynamic> props,
       required List<Widget> children,
       required Map<String, dynamic> context,
@@ -46,14 +49,17 @@ void registerDefaultWidgets() {
         child: children.isNotEmpty ? children.first : null,
       );
     },
-    {
-      'padding': (value) => EdgeInsets.all(double.parse(value)),
+    propConfigs: {
+      'padding': PropConfig(
+          transformer: (value) => EdgeInsets.all(value.toDouble()),
+          preTransformType: int,
+          type: EdgeInsets),
     },
   );
 
   WidgetRegistry.register(
-    'If',
-    ({
+    tag: 'If',
+    builder: ({
       required Map<String, dynamic> props,
       required List<Widget> children,
       required Map<String, dynamic> context,
@@ -71,12 +77,11 @@ void registerDefaultWidgets() {
       }
       return const SizedBox.shrink(); // Default to an empty widget
     },
-    {},
   );
 
   WidgetRegistry.register(
-    'ForEach',
-    ({
+    tag: 'ForEach',
+    builder: ({
       required Map<String, dynamic> props,
       required List<Widget> children,
       required Map<String, dynamic> context,
@@ -105,16 +110,23 @@ void registerDefaultWidgets() {
         // Build children widgets with the extended context
         final renderedChildren = rawChildren.map(
           (child) => XmlWidgetParser(context: extendedContext)
-              .parseXml(rawChildren.toString()),
+              .parseXml(child.toString()),
         );
 
-        print('Rendered Children: $renderedChildren');
+        // print(
+        //     'Rendered Children: $renderedChildren, rawChildren: $rawChildren');
 
-        return Column(children: renderedChildren.toList().cast<Widget>());
+        return Column(
+            key: Key('repeatedWidget_$index'),
+            children: renderedChildren.toList().cast<Widget>());
       }).toList();
 
       // Return the repeated widgets in a column (or customize as needed)
-      return Column(children: repeatedWidgets);
+      return Column(
+        key: const Key('repeatedWidgetsColumn'),
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: repeatedWidgets,
+      );
     },
   );
 }
