@@ -17,19 +17,19 @@ class XmlWidgetParser {
         };
 
   /// Parse the entire XML string and process the root element
-  dynamic parseXml(String xmlString, {bool? debug}) {
+  dynamic parseXml(String xmlString, {bool? debug, bool? validateProps}) {
     final document = XmlDocument.parse(xmlString);
     if (debug != null && debug) {
       return debugTree(document.rootElement);
     }
-    return _buildWidgetFromXml(document.rootElement);
+    return _buildWidgetFromXml(document.rootElement, validateProps ?? true);
   }
 
   dynamic debugTree(XmlElement element) {
     final tagName = element.name.local;
     final attributes = <String, dynamic>{};
     for (final attribute in element.attributes) {
-      attributes[attribute.name.local] = _evaluateDynamicProp(attribute.value);
+      attributes[attribute.name.local] = evaluateDynamicProp(attribute.value);
     }
 
     final rawChildren = element.children.whereType<XmlElement>().toList();
@@ -45,29 +45,34 @@ class XmlWidgetParser {
   }
 
   /// Recursively build widgets or parse attributes from XML elements
-  Widget _buildWidgetFromXml(XmlElement element) {
+  Widget _buildWidgetFromXml(XmlElement element, bool validateProps) {
     final tagName = element.name.local;
 
     // Parse attributes and evaluate dynamic expressions
     final attributes = <String, dynamic>{};
+
+    final widgetConfig = WidgetRegistry.getWidgetConfig(tagName);
 
     final propTransformers = WidgetRegistry.getTransformers(tagName) ?? {};
 
     for (final attribute in element.attributes) {
       final key = attribute.name.local;
 
-      final evaluatedPropValue = _evaluateDynamicProp(attribute.value);
+      final evaluatedPropValue = evaluateDynamicProp(attribute.value);
 
-      WidgetRegistry.validateSingleProp(tagName, key, evaluatedPropValue, true);
+      if (validateProps) {
+        WidgetRegistry.validateSingleProp(
+            tagName, key, evaluatedPropValue, true);
+      }
 
       if (propTransformers.containsKey(key)) {
         final transformedValue =
-            propTransformers[key]!(_evaluateDynamicProp(attribute.value));
+            propTransformers[key]!(evaluateDynamicProp(attribute.value));
         // WidgetRegistry.validateSingleProp(
         //     tagName, key, transformedValue, false);
         attributes[key] = transformedValue;
       } else {
-        attributes[key] = _evaluateDynamicProp(attribute.value);
+        attributes[key] = evaluateDynamicProp(attribute.value);
       }
     }
 
@@ -75,9 +80,19 @@ class XmlWidgetParser {
 
     final rawChildren = element.children.whereType<XmlElement>().toList();
 
-    final children = attributes.containsKey('list')
+    rawChildren.where((child) => child.name.local == 'Slot').forEach((child) {
+      String bindTo = child.getAttribute('bindTo') as String;
+      Widget parsedWidget = _buildWidgetFromXml(
+          child.children.whereType<XmlElement>().first, validateProps);
+      attributes[bindTo] = parsedWidget;
+    });
+
+    final children = widgetConfig.parseChildren
         ? [const SizedBox.shrink()] as List<Widget>
-        : rawChildren.map(_buildWidgetFromXml).toList();
+        : rawChildren
+            .where((child) => child.name.local != 'Slot')
+            .map((child) => _buildWidgetFromXml(child, validateProps))
+            .toList();
 
     if (builder != null) {
       return builder(
@@ -91,7 +106,7 @@ class XmlWidgetParser {
   }
 
   /// Evaluate dynamic expressions within attributes
-  dynamic _evaluateDynamicProp(String value) {
+  dynamic evaluateDynamicProp(String value) {
     if (value.startsWith('{') && value.endsWith('}')) {
       // Expression inside `{}`: evaluate it
       final expression = value.substring(1, value.length - 1);

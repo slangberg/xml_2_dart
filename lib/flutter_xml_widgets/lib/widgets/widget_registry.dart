@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:xml/xml.dart';
+import 'package:xml_to_dart/flutter_xml_widgets/lib/utils/exceptions.dart';
 
 typedef WidgetBuilderFunction = Widget Function({
   required Map<String, dynamic> props,
@@ -8,32 +9,46 @@ typedef WidgetBuilderFunction = Widget Function({
   required List<Widget> children,
 });
 
-class _WidgetDefinition {
+class WidgetDefinition {
   final WidgetBuilderFunction builder;
   final Map<String, PropConfig> propConfigs;
+  final bool validateProps;
+  final bool parseChildren;
+  final String tag;
 
-  _WidgetDefinition(this.builder, this.propConfigs);
+  WidgetDefinition(this.tag, this.builder, this.propConfigs, this.validateProps,
+      this.parseChildren);
 }
 
 class PropConfig {
   final PropTransformer? transformer;
   final Type? type;
   final Type? preTransformType;
+  final dynamic? defaultValue;
+  final Map<String, dynamic>? metadata;
 
-  PropConfig({this.transformer, this.type, this.preTransformType});
+  PropConfig(
+      {this.transformer,
+      this.type,
+      this.preTransformType,
+      this.defaultValue,
+      this.metadata});
 }
 
 typedef PropTransformer = dynamic Function(dynamic value);
 
 class WidgetRegistry {
-  static final Map<String, _WidgetDefinition> _registry = {};
+  static final Map<String, WidgetDefinition> _registry = {};
 
   static void register({
     required String tag,
     required WidgetBuilderFunction builder,
     Map<String, PropConfig>? propConfigs,
+    bool validateProps = true,
+    bool parseChildren = true,
   }) {
-    _registry[tag] = _WidgetDefinition(builder, propConfigs ?? {});
+    _registry[tag] = WidgetDefinition(
+        tag, builder, propConfigs ?? {}, validateProps, parseChildren);
   }
 
   static WidgetBuilderFunction? getBuilder(String tag) {
@@ -51,6 +66,18 @@ class WidgetRegistry {
       }
     }
     return transformers;
+  }
+
+  static WidgetDefinition getWidgetConfig(String tagName) {
+    final definition = _registry[tagName];
+    if (definition == null) {
+      throw UnknownWidgetException(tagName);
+    }
+    return definition;
+  }
+
+  static void clearDirectory() {
+    _registry.clear();
   }
 
   static bool validateProps(

@@ -8,8 +8,8 @@ void main() {
     setUp(() {
       // Clear the registry before each test
       WidgetRegistry.register(
-        'TestWidget',
-        ({
+        tag: 'TestWidget',
+        builder: ({
           required Map<String, dynamic> props,
           required Map<String, dynamic> context,
           required List<Widget> children,
@@ -22,8 +22,8 @@ void main() {
 
     test('register and retrieve a widget without transformers', () {
       WidgetRegistry.register(
-        'TestWidget',
-        ({
+        tag: 'TestWidget',
+        builder: ({
           required Map<String, dynamic> props,
           required Map<String, dynamic> context,
           required List<Widget> children,
@@ -47,48 +47,106 @@ void main() {
       expect((widget as Text).data, 'Hello, World!');
     });
 
-    test('register and retrieve a widget with transformers', () {
+    test('register and retrieve a widget with parseChildren option', () {
       WidgetRegistry.register(
-        'TestWidget',
-        ({
+        tag: 'ParseChildrenWidget',
+        builder: ({
           required Map<String, dynamic> props,
           required Map<String, dynamic> context,
           required List<Widget> children,
           required List<XmlElement> rawChildren,
         }) {
-          return Container(
-            padding: props['padding'],
-            color: props['color'],
+          return Column(children: children);
+        },
+        parseChildren: true,
+      );
+
+      final builder = WidgetRegistry.getBuilder('ParseChildrenWidget');
+      expect(builder, isNotNull);
+
+      final widget = builder!(
+        props: {},
+        context: {},
+        children: [Text('Child 1'), Text('Child 2')],
+        rawChildren: [],
+      );
+
+      expect(widget, isA<Column>());
+      expect((widget as Column).children.length, 2);
+    });
+
+    test(
+        'register and retrieve a widget with raw children when parseChildren is false',
+        () {
+      WidgetRegistry.register(
+        tag: 'RawChildrenWidget',
+        builder: ({
+          required Map<String, dynamic> props,
+          required Map<String, dynamic> context,
+          required List<Widget> children,
+          required List<XmlElement> rawChildren,
+        }) {
+          return Column(
+            children: rawChildren.map((e) => Text(e.toString())).toList(),
           );
         },
-        {
-          'padding': (value) => EdgeInsets.all(double.parse(value)),
-          'color': (value) => Color(int.parse(value)),
+        parseChildren: false,
+      );
+
+      final builder = WidgetRegistry.getBuilder('RawChildrenWidget');
+      expect(builder, isNotNull);
+
+      final rawXml =
+          '<p><Container padding="0.00"><Text fontSize="{20}" value="{item}" /></Container></p>';
+      final document = XmlDocument.parse(rawXml);
+      final rawChildren =
+          document.rootElement.children.whereType<XmlElement>().toList();
+
+      final widget = builder!(
+        props: {},
+        context: {},
+        children: [],
+        rawChildren: rawChildren,
+      );
+
+      expect(widget, isA<Column>());
+      expect((widget as Column).children.length, rawChildren.length);
+      expect(
+          (widget.children.first as Text).data, rawChildren.first.toString());
+    });
+
+    test('register and retrieve a widget with pre and post transform', () {
+      WidgetRegistry.register(
+        tag: 'TransformWidget',
+        builder: ({
+          required Map<String, dynamic> props,
+          required Map<String, dynamic> context,
+          required List<Widget> children,
+          required List<XmlElement> rawChildren,
+        }) {
+          return Text(props['value'] ?? '');
+        },
+        propConfigs: {
+          'value': PropConfig(
+            transformer: (value) => 'Transformed $value',
+          ),
         },
       );
 
-      final builder = WidgetRegistry.getBuilder('TestWidget');
-      final transformers = WidgetRegistry.getTransformers('TestWidget');
+      final builder = WidgetRegistry.getBuilder('TransformWidget');
 
+      final transformers = WidgetRegistry.getTransformers('TransformWidget');
       expect(builder, isNotNull);
-      expect(transformers, isNotNull);
-
-      final transformedProps = {
-        'padding': transformers!['padding']!('10.0'),
-        'color': transformers['color']!('0xFF0000FF'),
-      };
 
       final widget = builder!(
-        props: transformedProps,
+        props: {'value': 'Hello'},
         context: {},
         children: [],
         rawChildren: [],
       );
 
-      expect(widget, isA<Container>());
-      final container = widget as Container;
-      expect(container.padding, EdgeInsets.all(10.0));
-      expect(container.color, Color(0xFF0000FF));
+      expect(widget, isA<Text>());
+      expect(transformers!['value']!('Hello'), 'Transformed Hello');
     });
 
     test('retrieve non-existent widget returns null', () {

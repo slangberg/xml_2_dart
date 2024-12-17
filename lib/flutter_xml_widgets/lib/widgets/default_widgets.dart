@@ -81,6 +81,7 @@ void registerDefaultWidgets() {
 
   WidgetRegistry.register(
     tag: 'ForEach',
+    parseChildren: false,
     builder: ({
       required Map<String, dynamic> props,
       required List<Widget> children,
