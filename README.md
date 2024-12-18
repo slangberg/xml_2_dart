@@ -1,5 +1,7 @@
 # xml_to_dart
 
+![Header](header.jpg)
+
 A Flutter project that parses XML to dynamically build Flutter widgets.
 
 `xml_to_dart` is a versatile Flutter library designed to dynamically build Flutter widget trees from XML strings. By leveraging this library, developers can create complex and dynamic UIs based on external data sources or configurations. The library supports contextual data binding, allowing XML attributes to be dynamically resolved using a context map. Additionally, it provides a straightforward mechanism for registering custom widgets, enabling extensive customization and flexibility. With built-in error handling and a robust parsing mechanism, `xml_to_dart` simplifies the process of generating Flutter widgets from XML, making it an essential tool for dynamic UI generation in Flutter applications.
