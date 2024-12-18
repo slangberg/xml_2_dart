@@ -82,7 +82,7 @@ void main() {
   <ForEach list="{items}">
     <Container padding="5" color="{Colors.green}">
       <Text value="{item.name}" />
-      <Button onPressed="{onItemPress(item.id)}" text="Click Me" />
+      <Button onPressed="{onItemPress(item.index)}" text="Click Me" />
     </Container>
   </ForEach>
 </Container>
@@ -91,7 +91,7 @@ void main() {
   final parser = XmlWidgetParser(context: {
     'isLoggedIn': true,
     'userName': 'John Doe',
-    onItemPress: (id) => print('Item with the of $id')
+    onItemPress: (index) => print('Item with the index of $index clicked')
     'user': {'name': 'John Doe'},
     'items': [
       {'name': 'Item 1', id: 1 },
@@ -176,6 +176,10 @@ Children are passed as a list of widgets to the builder function. These children
 child: children.isNotEmpty ? children.first : null,
 ```
 
+#### rawChildren
+
+rawChildren is a list of the raw xml nodes from the main source of xml that are initially parsed and are not yet processed into widgets. This is useful for scenarios where you need custom logic to process the children.
+
 #### Context
 
 The context is a map that provides dynamic values and expressions that can be used within the XML. This context is passed to the builder function and can be used to resolve dynamic properties. For example, in the ForEach widget registration:
@@ -183,4 +187,61 @@ The context is a map that provides dynamic values and expressions that can be us
 ```dart
 final newContext = Map<String, dynamic>.from(context);
 newContext['item'] = item;
+```
+
+### Auto Parse Child Configuration
+
+The `autoParseChild` configuration allows you to control whether the children of a widget should be automatically parsed or not. When `parseChildren` is set to `false`, you can manually handle the raw XML children within the builder function. This is useful for scenarios where you need custom logic to process the children.
+
+Here is an example of how to use the `parseChildren` configuration in combo with the `context`and `rawChildren`builder arguments in use in ForEach widget:
+
+```dart
+WidgetRegistry.register(
+  tag: 'ForEach',
+  parseChildren: false,
+  builder: ({
+    required Map<String, dynamic> props,
+    required List<Widget> children,
+    required Map<String, dynamic> context,
+    required List<XmlNode> rawChildren,
+  }) {
+    // Retrieve the list to iterate over from the props
+    final list = props['list'] as List<dynamic>?;
+    if (list == null) {
+      throw Exception('The "list" prop is required for Foreach.');
+    }
+
+    // Retrieve the key accessor or default to 'item'
+    final keyAccessor = props['itemAs'] as String? ?? 'item';
+
+    // Build widgets for each item in the list
+    final repeatedWidgets = list.asMap().entries.map((entry) {
+      final index = entry.key;
+      final item = entry.value;
+
+      // Extend the context with the current item or key accessor
+      final extendedContext = Map<String, dynamic>.from(context);
+
+      extendedContext[keyAccessor] = item;
+      extendedContext['index'] = index;
+
+      // Build children widgets with the extended context
+      final renderedChildren = rawChildren.map(
+        (child) => XmlWidgetParser(context: extendedContext)
+            .parseXml(child.toString()),
+      );
+
+      return Column(
+          key: Key('repeatedWidget_$index'),
+          children: renderedChildren.toList().cast<Widget>());
+    }).toList();
+
+    // Return the repeated widgets in a column (or customize as needed)
+    return Column(
+      key: const Key('repeatedWidgetsColumn'),
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: repeatedWidgets,
+    );
+  },
+);
 ```
